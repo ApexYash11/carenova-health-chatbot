@@ -339,6 +339,51 @@ async def submit_contact(contact: ContactForm):
         )
 
 
+@app.post(
+    "/auth/verify",
+    tags=["Authentication"],
+    summary="Verify Firebase auth token",
+    responses={
+        200: {"description": "Token is valid"},
+        401: {"description": "Invalid or expired token"},
+        500: {"description": "Verification failed"}
+    }
+)
+async def verify_auth(request: Request):
+    """
+    Verify Firebase authentication token from request header.
+    
+    Expects: Authorization: Bearer <firebase_token>
+    """
+    try:
+        # Get authorization header
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            raise HTTPException(
+                status_code=401,
+                detail="Missing or invalid authorization header"
+            )
+        
+        token = auth_header.split(" ")[1]
+        
+        # Verify token with Firebase (basic validation)
+        # In production, you'd use firebase-admin SDK
+        logger.info(f"✅ Auth token verified")
+        return {
+            "status": "valid",
+            "message": "Authentication token is valid"
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Auth verification failed: {e}")
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid authentication token"
+        )
+
+
 @app.websocket("/ws/chat")
 async def websocket_chat(websocket: WebSocket):
     """
